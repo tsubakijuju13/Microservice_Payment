@@ -1,0 +1,29 @@
+version: '3.1'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      REDIS_HOST: redis-image
+      STRIPE_SECRET_KEY: 'sk_test_51NsZs5FImhX97v5dFA6IswjfcOIcBLWAoTFQDkiflXxnr99P1BwTlec0G0Y3EEkNnqvD3ekR2JzYYUCUPRLBkk4G007wHTMI92'
+    ports:
+      - 6800:6800
+    depends_on:
+      - redis-image
+
+  redis-image:
+    image: redis
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - redis-persistent:/data
+    ports:
+      - "6379:6379"
+    entrypoint: redis-server --appendonly yes
+
+volumes:
+  redis-persistent:
+    driver: local
+
