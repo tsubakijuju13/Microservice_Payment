@@ -1,5 +1,6 @@
 const express = require('express')
 const Redis = require('ioredis')
+const cors = require('cors')
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 /*const redis = require('redis')
 
@@ -22,14 +23,18 @@ client.on('error', (err) => {
 
 const host = process.env.REDIS_HOST
 const client = new Redis(`redis://${host}:6379`)
-// const client = new Redis(`redis://192.168.49.2:30001`)
 
+// const client = new Redis(`redis://192.168.49.2:30001`)
 ///////const client = new Redis(`redis://localhost:6379`)
 
 
+var corsOptions = {
+    origin: 'http://localhost:3000',
+    optionsSuccessStatus: 200 
+}
 const app = express()
 app.use(express.json())
-
+app.use(cors(corsOptions))
 
 app.get('/', (req, res) => {
     res.send("I'm alive and working")
@@ -58,28 +63,42 @@ app.post('/save/:key', (req, res) => {
     })
 })
 
+function createItem(data) {
+    const product = data.donation? {
+        name: data.name, 
+        description: `Tipo de animal: ${data.type_animal}`,
+        images: ['https://animalgenetics.com/wp-content/uploads/2023/01/ANIMAL-ICONS-CANINE.png']
+    } : {
+        name: "Donación",
+        images: ['https://cdn-icons-png.flaticon.com/512/5316/5316685.png']
+    }
 
-app.post('/payment', async (req, res) => {
+    const item = [
+        {
+            price_data: {
+                currency: 'usd',
+                product_data: product,
+                unit_amount: data.unit_amount,
+            },
+            quantity: data.quantity,
+        }
+    ]
+    return item
+}
+
+app.post('/payment',async (req, res) => {
     const data = req.body
+    const item = createItem(data)
+
     const s = await stripe.checkout.sessions.create({
-        line_items: [
-            {
-                price_data: {
-                    currency: 'usd',
-                    product_data: {
-                        name: data.name,
-                    },
-                    unit_amount: data.unit_amount,
-                },
-                quantity: data.quantity,
-            }
-        ],
+        line_items: item,
         mode: 'payment',
-        success_url: 'https://learn.microsoft.com/en-us/azure/devops/cli/?view=azure-devops',
-        cancel_url: 'https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/',
+        success_url: 'http://localhost:3000/Registro-Pago/?success=true',
+        cancel_url: 'http://localhost:3000/Registro-Pago/?success=false',
     })
-    //res.redirect(303, s.url)
-    res.send(s.url)
+
+    //res.send(s.url)
+    res.json({url: s.url})
 })
 
 app.listen(6800, () => {
