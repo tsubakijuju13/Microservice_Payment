@@ -53,7 +53,7 @@ app.get('/:key', (req, res) => {
 app.get('/keys_payment', (req, res) => {
     client.keys('*', (err, keys) => {
         if (err) res.send("Error getting keys")
-        else res.send(keys)
+        else res.send("xd")
     })
 })
 
