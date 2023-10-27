@@ -2,6 +2,7 @@ const express = require('express')
 const Redis = require('ioredis')
 const cors = require('cors')
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+//const stripe = require('stripe')('sk_test_51NsZs5FImhX97v5dFA6IswjfcOIcBLWAoTFQDkiflXxnr99P1BwTlec0G0Y3EEkNnqvD3ekR2JzYYUCUPRLBkk4G007wHTMI92')
 /*const redis = require('redis')
 
 const host = process.env.REDIS_HOST
@@ -49,6 +50,13 @@ app.get('/:key', (req, res) => {
     })
 })
 
+app.get('/keys_payment', (req, res) => {
+    client.keys('*', (err, keys) => {
+        if (err) res.send("Error getting keys")
+        else res.send(keys)
+    })
+})
+
 
 app.post('/save/:key', (req, res) => {
     const k = req.params.key
@@ -93,12 +101,44 @@ app.post('/payment',async (req, res) => {
     const s = await stripe.checkout.sessions.create({
         line_items: item,
         mode: 'payment',
-        success_url: 'http://localhost:3000/Registro-Pago/?success=true',
+        success_url: 'http://localhost:3000/Registro-Pago/?success=true&session_id={CHECKOUT_SESSION_ID}',
         cancel_url: 'http://localhost:3000/Registro-Pago/?success=false',
     })
 
     //res.send(s.url)
     res.json({url: s.url})
+})
+
+function dataPayment(data) {
+    const sessionPayment = {
+        amount_subtotal: null,
+        amount_total: null,
+        created: null,
+        currency: null,
+        customer_details: null,
+        mode: null,
+        payment_intent: null,
+        payment_method_types: null,
+        payment_status: null,
+        status: null
+    }
+
+    for (const key in sessionPayment)
+        sessionPayment[key] = data[key]
+
+    return sessionPayment
+}
+
+app.get('/order', async (req,res) => {
+    const s = await stripe.checkout.sessions.retrieve(req.query.session_id)
+    const paymentObj = dataPayment(s)
+
+    client.set(s[id], JSON.stringify(paymentObj), (err, val) => {
+        if (err) 
+            res.status(500).json({message: "Error saving value in redis "})
+        else 
+            res.json({message: "Saved"})
+    })
 })
 
 app.listen(6800, () => {
