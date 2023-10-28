@@ -35,13 +35,13 @@ var corsOptions = {
 }
 const app = express()
 app.use(express.json())
-app.use(cors(corsOptions))
+app.use(cors())
 
 app.get('/', (req, res) => {
     res.send("I'm alive and working")
 })
 
-app.get('/:key', (req, res) => {
+app.get('/getValue/:key', (req, res) => {
     const k = req.params.key
 
     client.get(k, (err, value) => {
@@ -50,10 +50,10 @@ app.get('/:key', (req, res) => {
     })
 })
 
-app.get('/keys_payment', (req, res) => {
+app.get('/keysPayment', (req, res) => {
     client.keys('*', (err, keys) => {
         if (err) res.send("Error getting keys")
-        else res.send("xd")
+        else res.send(keys)
     })
 })
 
@@ -133,7 +133,9 @@ app.get('/order', async (req,res) => {
     const s = await stripe.checkout.sessions.retrieve(req.query.session_id)
     const paymentObj = dataPayment(s)
 
-    client.set(s[id], JSON.stringify(paymentObj), (err, val) => {
+    console.log(s['id'])
+
+    client.set(s['id'], JSON.stringify(paymentObj), (err, val) => {
         if (err) 
             res.status(500).json({message: "Error saving value in redis "})
         else 
