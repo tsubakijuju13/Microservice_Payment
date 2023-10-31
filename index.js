@@ -36,6 +36,12 @@ var corsOptions = {
 const app = express()
 app.use(express.json())
 app.use(cors())
+app.use(function(req, res, next) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST");
+    res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+  });
 
 app.get('/', (req, res) => {
     res.send("I'm alive and working")
@@ -75,6 +81,7 @@ function createItem(data) {
     const product = data.donation? {
         name: data.name, 
         description: `Tipo de animal: ${data.type_animal}`,
+        metadata: data.metadata,
         images: ['https://animalgenetics.com/wp-content/uploads/2023/01/ANIMAL-ICONS-CANINE.png']
     } : {
         name: "Donación",
@@ -133,8 +140,6 @@ app.get('/order', async (req,res) => {
     const s = await stripe.checkout.sessions.retrieve(req.query.session_id)
     const paymentObj = dataPayment(s)
 
-    console.log(s['id'])
-
     client.set(s['id'], JSON.stringify(paymentObj), (err, val) => {
         if (err) 
             res.status(500).json({message: "Error saving value in redis "})
@@ -143,6 +148,6 @@ app.get('/order', async (req,res) => {
     })
 })
 
-app.listen(6800, () => {
+app.listen(80, () => {
     console.log("Te estoy escuchando")
 })

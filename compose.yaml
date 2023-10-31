@@ -10,6 +10,8 @@ services:
       STRIPE_SECRET_KEY: 'sk_test_51NsZs5FImhX97v5dFA6IswjfcOIcBLWAoTFQDkiflXxnr99P1BwTlec0G0Y3EEkNnqvD3ekR2JzYYUCUPRLBkk4G007wHTMI92'
     ports:
       - 6800:6800
+    networks:
+      - services-net
     depends_on:
       - redis-image
 
@@ -21,9 +23,14 @@ services:
       - redis-persistent:/data
     ports:
       - "6379:6379"
+    networks:
+      - services-net
     entrypoint: redis-server --appendonly yes
 
 volumes:
   redis-persistent:
     driver: local
 
+networks:
+  services-net:
+    driver: bridge
